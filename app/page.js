@@ -135,13 +135,19 @@ export default function DumkaSportsDesk() {
         })
       });
 
+      const contentType = res.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        alert(`Route Error (${res.status}): Path /api/sessions returned HTML instead of JSON. Ensure app/api/sessions/route.js exists.`);
+        return;
+      }
+
       const json = await res.json();
 
       if (res.ok && json.success) {
         setActiveSession(null);
         await fetchRealData();
       } else {
-        alert(`Server Error (${res.status}): ` + (json.error || 'Failed to save session'));
+        alert(`Server Error (${res.status}): ` + (json.error || 'Failed to lock session'));
       }
     } catch (err) {
       alert('Network request failed: ' + err.message);
@@ -171,6 +177,12 @@ export default function DumkaSportsDesk() {
         })
       });
 
+      const contentType = res.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        alert(`Route Error (${res.status}): Path /api/matches returned HTML instead of JSON. Ensure app/api/matches/route.js exists.`);
+        return;
+      }
+
       const json = await res.json();
       if (res.ok && json.success) {
         setNewMatch({ date: '', sport: 'Cricket', opponent: '', scores: {} });
@@ -179,7 +191,7 @@ export default function DumkaSportsDesk() {
         alert(`Server Error (${res.status}): ` + (json.error || 'Failed to save match'));
       }
     } catch (err) {
-      alert('Failed to save match scorecard.');
+      alert('Failed to save match scorecard: ' + err.message);
     }
   };
 

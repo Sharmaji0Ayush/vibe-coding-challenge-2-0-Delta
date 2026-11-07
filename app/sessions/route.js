@@ -10,15 +10,11 @@ export async function POST(request) {
 
     if (!body.date || !body.sport || !body.attendance) {
       return NextResponse.json(
-        { success: false, error: 'Missing required fields (date, sport, attendance)' },
+        { success: false, error: 'Missing required session parameters' },
         { status: 400 }
       );
     }
 
-    // Convert string dates safely
-    const sessionDate = new Date(body.date);
-
-    // Format and validate attendance array
     const formattedAttendance = body.attendance
       .filter(item => item.player && mongoose.Types.ObjectId.isValid(item.player))
       .map(item => ({
@@ -27,7 +23,7 @@ export async function POST(request) {
       }));
 
     const newSession = await Session.create({
-      date: sessionDate,
+      date: new Date(body.date),
       sport: body.sport,
       status: body.status || 'LOCKED',
       academy: 'Dumka Sports Academy',
@@ -36,7 +32,7 @@ export async function POST(request) {
 
     return NextResponse.json({ success: true, data: newSession });
   } catch (error) {
-    console.error('Session lock server error:', error);
+    console.error('Session API Error:', error);
     return NextResponse.json(
       { success: false, error: error.message || 'Internal Server Error' },
       { status: 500 }
