@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Users, 
   CheckCircle, 
@@ -32,8 +32,6 @@ const JHARKHAND_SPORTS = [
 export default function DumkaSportsDesk() {
   const [activeRole, setActiveRole] = useState('COACH');
   const [players, setPlayers] = useState([]);
-  const [sessions, setSessions] = useState([]);
-  const [matches, setMatches] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const [selectedPlayerId, setSelectedPlayerId] = useState('');
@@ -43,7 +41,7 @@ export default function DumkaSportsDesk() {
   const [activeSession, setActiveSession] = useState(null);
   const [newMatch, setNewMatch] = useState({ date: '', sport: 'Cricket', opponent: '', scores: {} });
 
-  // Fetch real data from MongoDB Atlas
+  // Fetch real data from MongoDB Atlas backend
   const fetchRealData = async () => {
     setLoading(true);
     try {
@@ -54,6 +52,8 @@ export default function DumkaSportsDesk() {
         if (json.data.length > 0 && !selectedPlayerId) {
           setSelectedPlayerId(json.data[0].id);
         }
+      } else {
+        console.error('API Error:', json.error);
       }
     } catch (err) {
       console.error('Failed to connect to MongoDB Atlas:', err);
@@ -66,7 +66,7 @@ export default function DumkaSportsDesk() {
     fetchRealData();
   }, []);
 
-  // Handle live registration to database
+  // Handle live registration to MongoDB Atlas
   const handleAddPlayer = async (e) => {
     e.preventDefault();
     if (!newPlayer.name || !newPlayer.age) return;
@@ -93,9 +93,11 @@ export default function DumkaSportsDesk() {
   const handleOpenSession = (sport) => {
     const today = new Date().toISOString().split('T')[0];
     const initialAtt = {};
+    
     players.filter(p => p.sport === sport).forEach(p => {
       initialAtt[p.id] = 'PRESENT';
     });
+
     setActiveSession({
       date: today,
       sport,
@@ -115,6 +117,7 @@ export default function DumkaSportsDesk() {
 
   const handleLockSession = async () => {
     if (!activeSession) return;
+
     const formattedAttendance = Object.keys(activeSession.attendance).map(pId => ({
       player: pId,
       status: activeSession.attendance[pId]
@@ -131,13 +134,17 @@ export default function DumkaSportsDesk() {
           attendance: formattedAttendance
         })
       });
+
       const json = await res.json();
+
       if (json.success) {
         setActiveSession(null);
-        fetchRealData();
+        await fetchRealData();
+      } else {
+        alert('Failed to lock session: ' + json.error);
       }
     } catch (err) {
-      alert('Failed to lock session in database');
+      alert('Network error while saving practice session.');
     }
   };
 
@@ -163,13 +170,16 @@ export default function DumkaSportsDesk() {
           playerScores: formattedScores
         })
       });
+
       const json = await res.json();
       if (json.success) {
         setNewMatch({ date: '', sport: 'Cricket', opponent: '', scores: {} });
-        fetchRealData();
+        await fetchRealData();
+      } else {
+        alert('Failed to save match: ' + json.error);
       }
     } catch (err) {
-      alert('Failed to save match scorecard');
+      alert('Failed to save match scorecard.');
     }
   };
 
@@ -178,6 +188,7 @@ export default function DumkaSportsDesk() {
 
   return (
     <div className="min-h-screen bg-[#0b0f19] text-amber-50 font-sans pb-16">
+      {/* Top Navigation */}
       <header className="border-b border-amber-500/10 bg-[#070a12]/90 sticky top-0 z-50 backdrop-blur-xl shadow-2xl">
         <div className="max-w-7xl mx-auto px-4 py-4 flex flex-col sm:flex-row justify-between items-center gap-4">
           <div className="flex items-center gap-3">
@@ -235,11 +246,11 @@ export default function DumkaSportsDesk() {
           </div>
         ) : (
           <>
-            {/* VIEW 1: COACH DESK */}
+            {/* COACH DESK VIEW */}
             {activeRole === 'COACH' && (
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 <div className="space-y-6">
-                  {/* Register Form */}
+                  {/* Registration Form */}
                   <div className="bg-[#121827] border border-amber-500/10 rounded-3xl p-6 shadow-xl">
                     <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
                       <UserPlus className="w-5 h-5 text-amber-500" /> Register Player
@@ -288,7 +299,7 @@ export default function DumkaSportsDesk() {
                     </form>
                   </div>
 
-                  {/* Open Practice Session */}
+                  {/* Start Practice Session */}
                   <div className="bg-[#121827] border border-amber-500/10 rounded-3xl p-6 shadow-xl">
                     <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
                       <Calendar className="w-5 h-5 text-amber-500" /> Start Practice Session
@@ -429,7 +440,7 @@ export default function DumkaSportsDesk() {
                     </div>
                   )}
 
-                  {/* Roster Overview */}
+                  {/* Roster Table */}
                   <div className="bg-[#121827] border border-amber-500/10 rounded-3xl p-6 shadow-xl">
                     <h2 className="text-lg font-bold text-white mb-4">Academy Roster Status (Live Atlas Data)</h2>
                     <div className="overflow-x-auto">
@@ -476,7 +487,7 @@ export default function DumkaSportsDesk() {
               </div>
             )}
 
-            {/* VIEW 2: SCOUT RADAR */}
+            {/* SCOUT RADAR VIEW */}
             {activeRole === 'SCOUT' && (
               <div className="space-y-6">
                 <div className="bg-[#121827] border border-amber-500/10 rounded-3xl p-6 shadow-xl">
@@ -541,7 +552,7 @@ export default function DumkaSportsDesk() {
               </div>
             )}
 
-            {/* VIEW 3: PLAYER PORTAL */}
+            {/* PLAYER PORTAL VIEW */}
             {activeRole === 'PLAYER' && (
               <div className="max-w-4xl mx-auto space-y-6">
                 <div className="bg-[#121827] p-4 rounded-3xl border border-amber-500/10 flex items-center justify-between shadow-lg">
