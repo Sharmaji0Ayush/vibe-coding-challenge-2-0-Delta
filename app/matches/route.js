@@ -8,7 +8,10 @@ export async function POST(request) {
     const body = await request.json();
 
     if (!body.date || !body.sport || !body.opponent) {
-      return NextResponse.json({ success: false, error: 'Missing required match parameters' }, { status: 400 });
+      return NextResponse.json(
+        { success: false, error: 'Missing required match parameters' },
+        { status: 400 }
+      );
     }
 
     const newMatch = await Match.create({
@@ -21,7 +24,10 @@ export async function POST(request) {
 
     return NextResponse.json({ success: true, data: newMatch });
   } catch (error) {
-    console.error('Match save error:', error);
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    console.error('Match API Error:', error);
+    return NextResponse.json(
+      { success: false, error: error.message || 'Internal Server Error' },
+      { status: 500 }
+    );
   }
 }
