@@ -137,14 +137,14 @@ export default function DumkaSportsDesk() {
 
       const json = await res.json();
 
-      if (json.success) {
+      if (res.ok && json.success) {
         setActiveSession(null);
         await fetchRealData();
       } else {
-        alert('Failed to lock session: ' + json.error);
+        alert(`Server Error (${res.status}): ` + (json.error || 'Failed to save session'));
       }
     } catch (err) {
-      alert('Network error while saving practice session.');
+      alert('Network request failed: ' + err.message);
     }
   };
 
@@ -172,11 +172,11 @@ export default function DumkaSportsDesk() {
       });
 
       const json = await res.json();
-      if (json.success) {
+      if (res.ok && json.success) {
         setNewMatch({ date: '', sport: 'Cricket', opponent: '', scores: {} });
         await fetchRealData();
       } else {
-        alert('Failed to save match: ' + json.error);
+        alert(`Server Error (${res.status}): ` + (json.error || 'Failed to save match'));
       }
     } catch (err) {
       alert('Failed to save match scorecard.');
@@ -188,7 +188,7 @@ export default function DumkaSportsDesk() {
 
   return (
     <div className="min-h-screen bg-[#0b0f19] text-amber-50 font-sans pb-16">
-      {/* Top Navigation */}
+      {/* Top Header Navigation */}
       <header className="border-b border-amber-500/10 bg-[#070a12]/90 sticky top-0 z-50 backdrop-blur-xl shadow-2xl">
         <div className="max-w-7xl mx-auto px-4 py-4 flex flex-col sm:flex-row justify-between items-center gap-4">
           <div className="flex items-center gap-3">
@@ -250,7 +250,7 @@ export default function DumkaSportsDesk() {
             {activeRole === 'COACH' && (
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 <div className="space-y-6">
-                  {/* Registration Form */}
+                  {/* Register Player Form */}
                   <div className="bg-[#121827] border border-amber-500/10 rounded-3xl p-6 shadow-xl">
                     <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
                       <UserPlus className="w-5 h-5 text-amber-500" /> Register Player
@@ -404,7 +404,7 @@ export default function DumkaSportsDesk() {
                               placeholder="e.g. Ranchi Warriors"
                               value={newMatch.opponent}
                               onChange={e => setNewMatch({ ...newMatch, opponent: e.target.value })}
-                              className="w-full bg-[#0b0f19] border border-amber-500/15 rounded-2xl px-4 py-2.5 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-amber-500 transition-all"
+                              className="w-full bg-[#0b0f19] border border-amber-500/15 rounded-2xl px-4 py-3 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-amber-500 transition-all"
                             />
                           </div>
                         </div>

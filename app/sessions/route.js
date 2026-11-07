@@ -9,32 +9,37 @@ export async function POST(request) {
     const body = await request.json();
 
     if (!body.date || !body.sport || !body.attendance) {
-      return NextResponse.json({ success: false, error: 'Missing required session parameters' }, { status: 400 });
+      return NextResponse.json(
+        { success: false, error: 'Missing required fields (date, sport, attendance)' },
+        { status: 400 }
+      );
     }
 
-    // Filter out invalid player ObjectIds to prevent Mongoose schema CastErrors
-    const validAttendance = body.attendance.filter(item => 
-      item.player && mongoose.Types.ObjectId.isValid(item.player)
-    );
+    // Convert string dates safely
+    const sessionDate = new Date(body.date);
 
-    if (validAttendance.length === 0 && body.attendance.length > 0) {
-      return NextResponse.json({ 
-        success: false, 
-        error: 'Invalid player IDs found. Please register players fresh or refresh your page.' 
-      }, { status: 400 });
-    }
+    // Format and validate attendance array
+    const formattedAttendance = body.attendance
+      .filter(item => item.player && mongoose.Types.ObjectId.isValid(item.player))
+      .map(item => ({
+        player: new mongoose.Types.ObjectId(item.player),
+        status: item.status || 'PRESENT'
+      }));
 
     const newSession = await Session.create({
-      date: new Date(body.date),
+      date: sessionDate,
       sport: body.sport,
       status: body.status || 'LOCKED',
       academy: 'Dumka Sports Academy',
-      attendance: validAttendance
+      attendance: formattedAttendance
     });
 
     return NextResponse.json({ success: true, data: newSession });
   } catch (error) {
-    console.error('Session lock error:', error);
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    console.error('Session lock server error:', error);
+    return NextResponse.json(
+      { success: false, error: error.message || 'Internal Server Error' },
+      { status: 500 }
+    );
   }
 }
